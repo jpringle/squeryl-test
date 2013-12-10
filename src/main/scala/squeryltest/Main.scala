@@ -24,6 +24,16 @@ object AppTypedExpressionFactories extends org.squeryl.PrimitiveTypeMode {
 }
 import AppTypedExpressionFactories._
 
+object AppSchema extends Schema {
+
+  implicit object appKED extends KeyedEntityDef[Entity[_], CoreId] {
+    def getId(e: Entity[_]) = e.id
+    def isPersisted(e: Entity[_]) = e.id.isInitialized
+    def idPropertyName = "id"
+  }
+
+  val users = table[User]
+}
 
 object IdUtils {
 
@@ -58,6 +68,7 @@ case class User(id: CoreId, first: String, last: String) extends Entity[User] {
 }
 
 trait BaseDAO[T <: Entity[T]] {
+  // import AppSchema._
 
   def table: Table[T]
 
@@ -65,49 +76,42 @@ trait BaseDAO[T <: Entity[T]] {
     table.where(_.id === id).headOption
   }
 
-  def save(e: T): T = if (isPersisted(e)) update(e) else create(e)
+  def save(e: T)(implicit ked: KeyedEntityDef[T, _]): T = if (isPersisted(e)) update(e) else create(e)
 
   def create(e: T): T = inTransaction {
     table.insert(e.withNewId)
   }
 
   // have to use an abstract method for the update
-  def update(e: T): T
+  // def update(e: T): T
 
   // This gives us the following compilation error:
   //   The method requires an implicit org.squeryl.KeyedEntityDef[T, Any] in scope,
   //    or that it extends the trait KeyedEntity[Any]
-  // def update(e: T): T = inTransaction {
-  //   table.update(e)
-  //   e
-  // }
+  def update(e: T)(implicit ked: KeyedEntityDef[T, _]): T = inTransaction {
+    // table.update(e)(AppSchema.appKED)
+    table.update(e)
+    e
+  }
 
   private def isPersisted(e: T): Boolean = e.id.isInitialized
 }
 
-class UserDAO(schema: AppSchema) extends BaseDAO[User] {
-  import schema._
+import AppSchema._
+// class UserDAO(schema: AppSchema) extends BaseDAO[User] {
+class UserDAO extends BaseDAO[User] {
+  // import AppSchema._
   val table = users
 
   // This works, because the following is in scope:
   //   implicit object appKED extends KeyedEntityDef[Entity[_], CoreId] {...}
-  def update(e: User): User = inTransaction {
-    table.update(e)
-    e
-  }
+  // def update(e: User): User = inTransaction {
+  //   table.update(e)
+  //   e
+  // }
 }
 
 
-class AppSchema extends Schema {
-
-  implicit object appKED extends KeyedEntityDef[Entity[_], CoreId] {
-    def getId(e: Entity[_]) = e.id
-    def isPersisted(e: Entity[_]) = e.id.isInitialized
-    def idPropertyName = "id"
-  }
-
-  val users = table[User]
-}
 
 object Main extends App {
     println("Hello")
@@ -118,12 +122,13 @@ object Main extends App {
         java.sql.DriverManager.getConnection(s"jdbc:h2:mem:test-db;DB_CLOSE_DELAY=-1", "sa", ""),
         new H2Adapter))
 
-    val schema = new AppSchema
-    import schema._
+    // val schema = new AppSchema
+    import AppSchema._
 
-    transaction { schema.drop; schema.create; }
+    transaction { AppSchema.drop; AppSchema.create; }
 
-    val userDAO = new UserDAO(schema)
+    // val userDAO = new UserDAO(schema)
+    val userDAO = new UserDAO
 
     val shouldBeNone = userDAO.findById(CoreId.generate)
     val newBob = User(CoreId.uninitialized, "Bob", "Smith")
