@@ -18,13 +18,13 @@ object Main extends App {
 
     val users: Users = new UserDAO
 
-    val shouldBeNone = users.findById(CoreId.generate)
-    val newBob = User(CoreId.uninitialized, "Bob", "Smith")
+    val shouldBeNone = users.findById(EntityId.generate)
+    val newBob = User(EntityId.uninitialized, "Bob", "Smith")
     val savedBob  = users.save(newBob)
     val foundBob  = users.findById(savedBob.id).get
     val updatedBob   = users.save(foundBob.copy(first = "Robert"))
 
-    val id = users.save(Identity(CoreId.uninitialized, "bob@smith.com"))
+    val id = users.save(Identity(EntityId.uninitialized, "bob@smith.com"))
 
     println(s"shouldBeNone -> $shouldBeNone")
     println(s"newBob     -> $newBob")

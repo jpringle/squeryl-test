@@ -3,7 +3,7 @@ package squeryltest
 trait Users extends BaseCRUD[User] {
 
   // Identity related stuff below here....
-  def findIdentityById(id: CoreId): Option[Identity]
+  def findIdentityById(id: EntityId): Option[Identity]
 
   def save(e: Identity): Identity
 
@@ -18,7 +18,7 @@ class UserDAO extends Users with BaseDAO[User] {
   // Identity related stuff below here....
   val ids = new IdentityDAO
 
-  def findIdentityById(id: CoreId): Option[Identity] = ids.findById(id)
+  def findIdentityById(id: EntityId): Option[Identity] = ids.findById(id)
 
   def save(e: Identity): Identity = ids.save(e)
 

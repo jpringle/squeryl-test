@@ -9,7 +9,7 @@ trait BaseDAO[T <: Entity[T]] extends BaseCRUD[T] {
 
   def table: Table[T]
 
-  def findById(id: CoreId): Option[T] = inTransaction {
+  def findById(id: EntityId): Option[T] = inTransaction {
     table.where(_.id === id).headOption
   }
 
@@ -29,7 +29,7 @@ trait BaseDAO[T <: Entity[T]] extends BaseCRUD[T] {
 
 trait BaseCRUD[T <: Entity[T]] {
 
-  def findById(id: CoreId): Option[T]
+  def findById(id: EntityId): Option[T]
 
   def save(e: T): T
 
